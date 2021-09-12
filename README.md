@@ -42,6 +42,7 @@ impl Components for TestComponents {
 }
 ```
 Implement the trait ```lame_ecs::Component``` for every component type that is in use
+
 It is used to get the vector of components given an ```lame_ecs::Components``` and a component type
 
 ```rs
