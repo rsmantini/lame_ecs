@@ -21,7 +21,7 @@ pub trait Components {
 }
 
 pub trait Component: Sized {
-    fn get_vec(components: &mut Box<dyn Components>) -> &mut Vec<Option<Self>>;
+    fn get_vec(components: &mut dyn Components) -> &mut Vec<Option<Self>>;
 }
 
 pub struct Ecs {
@@ -30,13 +30,13 @@ pub struct Ecs {
     pub components: Box<dyn Components>,
 }
 
-pub fn downcast_components<T: 'static>(c: &Box<dyn Components>) -> &T {
+pub fn downcast_components<T: 'static>(c: &dyn Components) -> &T {
     c.as_any()
         .downcast_ref::<T>()
         .expect("wrong components type")
 }
 
-pub fn downcast_components_mut<T: 'static>(c: &mut Box<dyn Components>) -> &mut T {
+pub fn downcast_components_mut<T: 'static>(c: &mut dyn Components) -> &mut T {
     c.as_any_mut()
         .downcast_mut::<T>()
         .expect("wrong components type")
@@ -75,7 +75,7 @@ impl Ecs {
     }
 
     pub fn add_component<C: Component>(&mut self, entity: Entity, component: C) {
-        self.get_component_option::<C>(entity).insert(component);
+        *self.get_component_option::<C>(entity) = Some(component);
     }
 
     pub fn remove_component<C: Component>(&mut self, entity: Entity) {
@@ -92,7 +92,7 @@ impl Ecs {
 
     fn get_component_option<C: Component>(&mut self, entity: Entity) -> &mut Option<C> {
         let index = self.get_index(entity).expect("operation on invalid entity");
-        &mut C::get_vec(&mut self.components)[index]
+        &mut C::get_vec(self.components.as_mut())[index]
     }
 }
 
@@ -127,13 +127,13 @@ mod tests {
     }
 
     impl Component for i32 {
-        fn get_vec(components: &mut Box<dyn Components>) -> &mut Vec<Option<Self>> {
+        fn get_vec(components: &mut dyn Components) -> &mut Vec<Option<Self>> {
             &mut downcast_components_mut::<TestComponents>(components).ints
         }
     }
 
     impl Component for String {
-        fn get_vec(components: &mut Box<dyn Components>) -> &mut Vec<Option<Self>> {
+        fn get_vec(components: &mut dyn Components) -> &mut Vec<Option<Self>> {
             &mut downcast_components_mut::<TestComponents>(components).strs
         }
     }
