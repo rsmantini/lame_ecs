@@ -47,13 +47,13 @@ It is used to get the vector of components given an ```lame_ecs::Components``` a
 
 ```rs
 impl Component for i32 {
-    fn get_vec(components: &mut Box<dyn Components>) -> &mut Vec<Option<Self>> {
+    fn get_vec(components: &mut dyn Components) -> &mut Vec<Option<Self>> {
         &mut downcast_components_mut::<TestComponents>(components).ints
     }
 }
 
 impl Component for String {
-    fn get_vec(components: &mut Box<dyn Components>) -> &mut Vec<Option<Self>> {
+    fn get_vec(components: &mut dyn Components) -> &mut Vec<Option<Self>> {
         &mut downcast_components_mut::<TestComponents>(components).strs
     }
 }
