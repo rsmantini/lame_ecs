@@ -24,7 +24,7 @@ pub trait Component: Sized {
     fn get_vec(components: &mut dyn Components) -> &mut Vec<Option<Self>>;
 }
 
-pub struct Ecs {
+pub struct World {
     entity_count: i64,
     pub entities: Vec<Entity>,
     pub components: Box<dyn Components>,
@@ -42,9 +42,9 @@ pub fn downcast_components_mut<T: 'static>(c: &mut dyn Components) -> &mut T {
         .expect("wrong components type")
 }
 
-impl Ecs {
-    pub fn new(components: Box<dyn Components>) -> Ecs {
-        Ecs {
+impl World {
+    pub fn new(components: Box<dyn Components>) -> World {
+        World {
             entity_count: 0,
             entities: Vec::new(),
             components,
@@ -141,7 +141,7 @@ mod tests {
     #[test]
     fn new_entity() {
         let components = Box::new(TestComponents::default());
-        let mut ecs = Ecs::new(components);
+        let mut ecs = World::new(components);
         let e0 = ecs.new_entity();
         let e1 = ecs.new_entity();
         assert_ne!(e0, e1);
@@ -150,7 +150,7 @@ mod tests {
     #[test]
     fn add_component() {
         let components = Box::new(TestComponents::default());
-        let mut ecs = Ecs::new(components);
+        let mut ecs = World::new(components);
         let e0 = ecs.new_entity();
 
         let c = 21;
@@ -164,7 +164,7 @@ mod tests {
     #[test]
     fn add_existing_component() {
         let components = Box::new(TestComponents::default());
-        let mut ecs = Ecs::new(components);
+        let mut ecs = World::new(components);
         let e0 = ecs.new_entity();
 
         let c = 42;
@@ -181,7 +181,7 @@ mod tests {
     #[test]
     fn remove_component() {
         let components = Box::new(TestComponents::default());
-        let mut ecs = Ecs::new(components);
+        let mut ecs = World::new(components);
         let e0 = ecs.new_entity();
 
         let c = 0;
@@ -200,7 +200,7 @@ mod tests {
     #[test]
     fn remove_entity() {
         let components = Box::new(TestComponents::default());
-        let mut ecs = Ecs::new(components);
+        let mut ecs = World::new(components);
         let e0 = ecs.new_entity();
 
         let int_comp = 0;
@@ -236,7 +236,7 @@ mod tests {
     #[test]
     fn multiple_entities() {
         let components = Box::new(TestComponents::default());
-        let mut ecs = Ecs::new(components);
+        let mut ecs = World::new(components);
         let e0 = ecs.new_entity();
         let e1 = ecs.new_entity();
 
@@ -270,7 +270,7 @@ mod tests {
     #[should_panic]
     fn remove_missing_entity() {
         let components = Box::new(TestComponents::default());
-        let mut ecs = Ecs::new(components);
+        let mut ecs = World::new(components);
         let entity = ecs.new_entity();
         ecs.remove_entity(entity);
         ecs.remove_entity(entity);
@@ -280,7 +280,7 @@ mod tests {
     #[should_panic]
     fn get_component_on_missing_entity() {
         let components = Box::new(TestComponents::default());
-        let mut ecs = Ecs::new(components);
+        let mut ecs = World::new(components);
         let entity = ecs.new_entity();
         ecs.add_component(entity, String::from("foo"));
         assert!(ecs.get_component::<String>(entity).is_some());
@@ -292,7 +292,7 @@ mod tests {
     #[should_panic]
     fn remove_component_on_missing_entity() {
         let components = Box::new(TestComponents::default());
-        let mut ecs = Ecs::new(components);
+        let mut ecs = World::new(components);
         let entity = ecs.new_entity();
         ecs.add_component(entity, String::from("foo"));
         assert!(ecs.get_component::<String>(entity).is_some());
@@ -304,7 +304,7 @@ mod tests {
     #[should_panic]
     fn add_component_to_missing_entity() {
         let components = Box::new(TestComponents::default());
-        let mut ecs = Ecs::new(components);
+        let mut ecs = World::new(components);
         let entity = ecs.new_entity();
         ecs.add_component(entity, String::from("foo"));
         assert!(ecs.get_component::<String>(entity).is_some());
