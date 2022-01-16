@@ -114,7 +114,7 @@ mod tests {
     }
 
     #[component_collection(Foo, Bar)]
-    struct TestComponents{}
+    struct TestComponents {}
 
     #[test]
     fn new_entity() {

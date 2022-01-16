@@ -92,18 +92,22 @@ pub fn get_component_collection(input: TokenStream) -> TokenStream {
     let parser =
         syn::punctuated::Punctuated::<syn::Ident, syn::Token![,]>::parse_separated_nonempty;
     let ids = match parser.parse(input) {
-        Ok(t)  => t,
+        Ok(t) => t,
         Err(e) => {
             return TokenStream::from(e.to_compile_error());
         }
     };
     if ids.len() != 2 {
         return TokenStream::from(
-            Error::new(ids.span(), "expected get_component_collection(world_instance, CollectionType").to_compile_error(),
+            Error::new(
+                ids.span(),
+                "expected get_component_collection(world_instance, CollectionType",
+            )
+            .to_compile_error(),
         );
     }
     let mut iter = ids.iter();
-    let world_instance = iter.next().unwrap(); 
+    let world_instance = iter.next().unwrap();
     let collection_type = iter.next().unwrap();
     let expanded = quote! {
         downcast_components_mut::<#collection_type>(#world_instance.components.as_mut())
