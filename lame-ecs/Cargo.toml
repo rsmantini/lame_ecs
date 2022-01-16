@@ -1,0 +1,10 @@
+[package]
+name = "lame-ecs"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+lame-ecs-macro = {version = "*", path = "../lame-ecs-macro"}
+itertools = "0.10"
+
+[lib]

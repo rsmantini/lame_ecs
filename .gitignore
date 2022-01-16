@@ -1,2 +1,5 @@
-/target
-Cargo.lock
+lame-ecs/target
+lame-ecs/Cargo.lock
+lame-ecs-macro/target
+lame-ecs-macro/Cargo.lock
+target
