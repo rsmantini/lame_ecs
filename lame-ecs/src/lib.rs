@@ -104,12 +104,12 @@ mod tests {
     use super::*;
 
     #[derive(Debug, PartialEq)]
-    struct Foo {
+    pub struct Foo {
         m: i32,
     }
 
     #[derive(Debug, PartialEq)]
-    struct Bar {
+    pub struct Bar {
         m: String,
     }
 
