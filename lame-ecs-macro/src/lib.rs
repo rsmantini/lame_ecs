@@ -22,11 +22,9 @@ pub fn component_collection(metadata: TokenStream, input: TokenStream) -> TokenS
     let struct_name = parse_macro_input!(input as DeriveInput).ident;
     let expanded = quote! {
         #[derive(Default, LameEcsComponents)]
-        struct #struct_name{
+        pub struct #struct_name{
             #(#field_names: Vec<Option<#types>>,)*
         }
-
-
     };
     TokenStream::from(expanded)
 }
