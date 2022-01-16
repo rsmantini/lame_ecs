@@ -44,5 +44,65 @@ world.remove_entity(e1);
 assert!(!world.is_alive(e1));
 ```
 
-** component_iter macro **
-TODO
+**componen iteration**
+Iteration on components is acomplished via the `component_iter` macro
+Use the `get_component_collection` macro passing the world instance to get the struct that holds all the components:
+
+```rs
+let components = get_component_collection!(world);
+```
+then get use the `component_iter` macro passing the world instance, component collection instance and list of components types to be iterated on:
+
+```rs
+let mut iter = component_iter!(world, components, Foo, Bar);
+```
+
+The iterator will yield a tuple with the requested components and the entity that owns then. It only yield entities that contains *ALL* of the request components
+
+
+
+```rs
+let mut world = create_world!();
+let e0 = world.new_entity();
+let e1 = world.new_entity();
+world.add_component(e0, Foo { m: 42 });
+world.add_component(
+    e0,
+    Bar {
+        m: "bar0".to_owned(),
+    },
+);
+world.add_component(e1, Foo { m: 84 });
+let components = get_component_collection!(world);
+
+let mut iter = component_iter!(world, components, Foo, Bar);
+assert_eq!(
+    iter.next().unwrap(),
+    (
+        &mut Foo { m: 42 },
+        &mut Bar {
+            m: "bar0".to_owned()
+        },
+        &e0
+    )
+);
+assert_eq!(iter.next(), None);
+
+let mut iter = component_iter!(world, components, Foo);
+assert_eq!(iter.next().unwrap(), (&mut Foo { m: 42 }, &e0));
+assert_eq!(iter.next().unwrap(), (&mut Foo { m: 84 }, &e1));
+assert_eq!(iter.next(), None);
+
+let mut iter = component_iter!(world, components, Bar);
+assert_eq!(
+    iter.next().unwrap(),
+    (
+        &mut Bar {
+            m: "bar0".to_owned()
+        },
+        &e0
+    )
+);
+assert_eq!(iter.next(), None);
+}
+```
