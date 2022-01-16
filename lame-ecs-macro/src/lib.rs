@@ -23,7 +23,7 @@ pub fn component_collection(metadata: TokenStream, input: TokenStream) -> TokenS
     let expanded = quote! {
         #[derive(Default, LameEcsComponents)]
         pub struct #struct_name{
-            #(#field_names: Vec<Option<#types>>,)*
+            pub #(#field_names: Vec<Option<#types>>,)*
         }
     };
     TokenStream::from(expanded)
