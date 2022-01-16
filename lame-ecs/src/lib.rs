@@ -113,11 +113,12 @@ mod tests {
         m: String,
     }
 
-    create_component_collection_struct!(Foo, Bar);
+    #[component_collection(Foo, Bar)]
+    struct TestComponents{}
 
     #[test]
     fn new_entity() {
-        let mut world = create_world!();
+        let mut world = create_world!(TestComponents);
         let e0 = world.new_entity();
         let e1 = world.new_entity();
         assert_ne!(e0, e1);
@@ -125,7 +126,7 @@ mod tests {
 
     #[test]
     fn add_component() {
-        let mut world = create_world!();
+        let mut world = create_world!(TestComponents);
         let e0 = world.new_entity();
 
         let c = Foo { m: 21 };
@@ -138,7 +139,7 @@ mod tests {
 
     #[test]
     fn add_existing_component() {
-        let mut world = create_world!();
+        let mut world = create_world!(TestComponents);
         let e0 = world.new_entity();
 
         let c = Foo { m: 42 };
@@ -154,7 +155,7 @@ mod tests {
 
     #[test]
     fn remove_component() {
-        let mut world = create_world!();
+        let mut world = create_world!(TestComponents);
         let e0 = world.new_entity();
 
         let c = Foo { m: 0 };
@@ -172,7 +173,7 @@ mod tests {
 
     #[test]
     fn remove_entity() {
-        let mut world = create_world!();
+        let mut world = create_world!(TestComponents);
         let e0 = world.new_entity();
 
         let foo_comp = Foo { m: 0 };
@@ -209,7 +210,7 @@ mod tests {
 
     #[test]
     fn multiple_entities() {
-        let mut world = create_world!();
+        let mut world = create_world!(TestComponents);
         let e0 = world.new_entity();
         let e1 = world.new_entity();
 
@@ -244,7 +245,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn remove_missing_entity() {
-        let mut world = create_world!();
+        let mut world = create_world!(TestComponents);
         let entity = world.new_entity();
         world.remove_entity(entity);
         world.remove_entity(entity);
@@ -253,7 +254,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn get_component_on_missing_entity() {
-        let mut world = create_world!();
+        let mut world = create_world!(TestComponents);
         let entity = world.new_entity();
         world.add_component(
             entity,
@@ -269,7 +270,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn remove_component_on_missing_entity() {
-        let mut world = create_world!();
+        let mut world = create_world!(TestComponents);
         let entity = world.new_entity();
         world.add_component(
             entity,
@@ -285,7 +286,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn add_component_to_missing_entity() {
-        let mut world = create_world!();
+        let mut world = create_world!(TestComponents);
         let entity = world.new_entity();
         world.add_component(
             entity,
@@ -300,7 +301,7 @@ mod tests {
 
     #[test]
     fn test_component_iter_macro() {
-        let mut world = create_world!();
+        let mut world = create_world!(TestComponents);
         let e0 = world.new_entity();
         let e1 = world.new_entity();
         world.add_component(e0, Foo { m: 42 });
@@ -311,7 +312,7 @@ mod tests {
             },
         );
         world.add_component(e1, Foo { m: 84 });
-        let components = get_component_collection!(world);
+        let components = get_component_collection!(world, TestComponents);
 
         let mut iter = component_iter!(world, components, Foo, Bar);
         assert_eq!(

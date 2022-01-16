@@ -4,11 +4,11 @@ use syn::{
     parse::Parser, parse_macro_input, spanned::Spanned, Data, DeriveInput, Error, Fields, Ident,
 };
 
-#[proc_macro]
-pub fn create_component_collection_struct(input: TokenStream) -> TokenStream {
+#[proc_macro_attribute]
+pub fn component_collection(metadata: TokenStream, input: TokenStream) -> TokenStream {
     let parser =
         syn::punctuated::Punctuated::<syn::Ident, syn::Token![,]>::parse_separated_nonempty;
-    let types = match parser.parse(input) {
+    let types = match parser.parse(metadata) {
         Ok(t) => t,
         Err(e) => {
             return TokenStream::from(e.to_compile_error());
@@ -19,9 +19,10 @@ pub fn create_component_collection_struct(input: TokenStream) -> TokenStream {
         .iter()
         .map(|x| syn::Ident::new(&(x.to_string().to_lowercase() + "s"), x.span()))
         .collect();
+    let struct_name = parse_macro_input!(input as DeriveInput).ident;
     let expanded = quote! {
         #[derive(Default, LameEcsComponents)]
-        struct LameEcsComponentCollection {
+        struct #struct_name{
             #(#field_names: Vec<Option<#types>>,)*
         }
 
@@ -78,7 +79,7 @@ pub fn derive_lame_ecs_components_fn(input: TokenStream) -> TokenStream {
 
         #(impl Component for #types {
             fn get_vec(components: &mut dyn Components) -> &mut Vec<Option<Self>> {
-                &mut downcast_components_mut::<LameEcsComponentCollection>(components).#field_names
+                &mut downcast_components_mut::<#ident>(components).#field_names
             }
         })*
 
@@ -88,9 +89,24 @@ pub fn derive_lame_ecs_components_fn(input: TokenStream) -> TokenStream {
 
 #[proc_macro]
 pub fn get_component_collection(input: TokenStream) -> TokenStream {
-    let world = parse_macro_input!(input as Ident);
+    let parser =
+        syn::punctuated::Punctuated::<syn::Ident, syn::Token![,]>::parse_separated_nonempty;
+    let ids = match parser.parse(input) {
+        Ok(t)  => t,
+        Err(e) => {
+            return TokenStream::from(e.to_compile_error());
+        }
+    };
+    if ids.len() != 2 {
+        return TokenStream::from(
+            Error::new(ids.span(), "expected get_component_collection(world_instance, CollectionType").to_compile_error(),
+        );
+    }
+    let mut iter = ids.iter();
+    let world_instance = iter.next().unwrap(); 
+    let collection_type = iter.next().unwrap();
     let expanded = quote! {
-        downcast_components_mut::<LameEcsComponentCollection>(#world.components.as_mut())
+        downcast_components_mut::<#collection_type>(#world_instance.components.as_mut())
     };
     TokenStream::from(expanded)
 }
@@ -126,9 +142,10 @@ pub fn component_iter(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
-pub fn create_world(_: TokenStream) -> TokenStream {
+pub fn create_world(input: TokenStream) -> TokenStream {
+    let collection_ty = parse_macro_input!(input as Ident);
     let expanded = quote! {
-        World::new(Box::new(LameEcsComponentCollection::default()))
+        World::new(Box::new(#collection_ty::default()))
     };
     TokenStream::from(expanded)
 }

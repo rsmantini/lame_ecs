@@ -10,6 +10,8 @@ Minimal ecs library that I did to learn a bit of rust
 
 Call the macro `create_component_collection_struct` passing the type of the used components:
 ```rs
+use lame_ecs::*
+
 #[derive(Debug, PartialEq)]
 struct Foo {
     m: i32,
@@ -20,11 +22,12 @@ struct Bar {
     m: String,
 }
 
-create_component_collection_struct!(Foo, Bar);
+#[component_collection(Foo, Bar)]
+struct TestComponents{}
 ```
 Use it as following:
 ```rs
-let mut world = create_world!();
+let mut world = create_world!(TestComponents);
 let e0 = world.new_entity();
 let e1 = world.new_entity();
 
@@ -46,10 +49,10 @@ assert!(!world.is_alive(e1));
 
 **componen iteration**
 Iteration on components is acomplished via the `component_iter` macro
-Use the `get_component_collection` macro passing the world instance to get the struct that holds all the components:
+Use the `get_component_collection` macro passing the world instance and the type of the component collection:
 
 ```rs
-let components = get_component_collection!(world);
+let components = get_component_collection!(world, TestComponents);
 ```
 then get use the `component_iter` macro passing the world instance, component collection instance and list of components types to be iterated on:
 
@@ -60,9 +63,10 @@ let mut iter = component_iter!(world, components, Foo, Bar);
 The iterator will yield a tuple with the requested components and the entity that owns then. It only yield entities that contains *ALL* of the request components
 
 
+Example:
 
 ```rs
-let mut world = create_world!();
+let mut world = create_world!(TestComponents);
 let e0 = world.new_entity();
 let e1 = world.new_entity();
 world.add_component(e0, Foo { m: 42 });
@@ -73,7 +77,7 @@ world.add_component(
     },
 );
 world.add_component(e1, Foo { m: 84 });
-let components = get_component_collection!(world);
+let components = get_component_collection!(world, TestComponents);
 
 let mut iter = component_iter!(world, components, Foo, Bar);
 assert_eq!(
