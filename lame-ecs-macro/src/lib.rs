@@ -125,8 +125,16 @@ pub fn component_iter(input: TokenStream) -> TokenStream {
             return TokenStream::from(e.to_compile_error());
         }
     };
+    if ids.len() <= 2 {
+        return TokenStream::from(
+            Error::new(
+                ids.span(),
+                "expected component_iter(world_instance, CollectionType, C0, C1 ...)",
+            )
+            .to_compile_error(),
+        );
+    }
     let mut ids_iter = ids.iter();
-    // TODO: Handle errors
     let world = ids_iter.next().unwrap();
     let collection = ids_iter.next().unwrap();
     let fields: Vec<Ident> = ids_iter.map(get_field_from_type).collect();
