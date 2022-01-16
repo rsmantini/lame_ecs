@@ -60,7 +60,7 @@ pub fn derive_lame_ecs_components_fn(input: TokenStream) -> TokenStream {
     };
     let ident = &input.ident;
     let expanded = quote! {
-        impl Components for #ident {
+        impl ComponentCollection for #ident {
             fn push_none(&mut self) {
                 #(self.#field_names.push(None);)*
             }
@@ -78,7 +78,7 @@ pub fn derive_lame_ecs_components_fn(input: TokenStream) -> TokenStream {
         }
 
         #(impl Component for #types {
-            fn get_vec(components: &mut dyn Components) -> &mut Vec<Option<Self>> {
+            fn get_vec(components: &mut dyn ComponentCollection) -> &mut Vec<Option<Self>> {
                 &mut downcast_components_mut::<#ident>(components).#field_names
             }
         })*

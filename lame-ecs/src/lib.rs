@@ -15,7 +15,7 @@ impl Entity {
     }
 }
 
-pub trait Components {
+pub trait ComponentCollection {
     fn push_none(&mut self);
     fn remove(&mut self, index: usize);
     fn as_any(&self) -> &dyn std::any::Any;
@@ -23,29 +23,29 @@ pub trait Components {
 }
 
 pub trait Component: Sized {
-    fn get_vec(components: &mut dyn Components) -> &mut Vec<Option<Self>>;
+    fn get_vec(components: &mut dyn ComponentCollection) -> &mut Vec<Option<Self>>;
 }
 
 pub struct World {
     entity_count: i64,
     pub entities: Vec<Entity>,
-    pub components: Box<dyn Components>,
+    pub components: Box<dyn ComponentCollection>,
 }
 
-pub fn downcast_components<T: 'static>(c: &dyn Components) -> &T {
+pub fn downcast_components<T: 'static>(c: &dyn ComponentCollection) -> &T {
     c.as_any()
         .downcast_ref::<T>()
         .expect("wrong components type")
 }
 
-pub fn downcast_components_mut<T: 'static>(c: &mut dyn Components) -> &mut T {
+pub fn downcast_components_mut<T: 'static>(c: &mut dyn ComponentCollection) -> &mut T {
     c.as_any_mut()
         .downcast_mut::<T>()
         .expect("wrong components type")
 }
 
 impl World {
-    pub fn new(components: Box<dyn Components>) -> World {
+    pub fn new(components: Box<dyn ComponentCollection>) -> World {
         World {
             entity_count: 0,
             entities: Vec::new(),
