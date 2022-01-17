@@ -47,7 +47,8 @@ world.remove_entity(e1);
 assert!(!world.is_alive(e1));
 ```
 
-**componen iteration**
+**component iteration**
+
 Iteration on components is acomplished via the `component_iter` and `component_iter_mut` macros.
 They receive as parameters the world instance and a list of component types to be iterated on.
 
