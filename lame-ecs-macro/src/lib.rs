@@ -4,11 +4,11 @@ use syn::{
     parse::Parser, parse_macro_input, spanned::Spanned, Data, DeriveInput, Error, Fields, Ident,
 };
 
-#[proc_macro_attribute]
-pub fn component_collection(metadata: TokenStream, input: TokenStream) -> TokenStream {
+#[proc_macro]
+pub fn create_component_collection(input: TokenStream) -> TokenStream {
     let parser =
         syn::punctuated::Punctuated::<syn::Ident, syn::Token![,]>::parse_separated_nonempty;
-    let types = match parser.parse(metadata) {
+    let types = match parser.parse(input) {
         Ok(t) => t,
         Err(e) => {
             return TokenStream::from(e.to_compile_error());
@@ -19,10 +19,9 @@ pub fn component_collection(metadata: TokenStream, input: TokenStream) -> TokenS
         .iter()
         .map(|x| syn::Ident::new(&(x.to_string().to_lowercase() + "s"), x.span()))
         .collect();
-    let struct_name = parse_macro_input!(input as DeriveInput).ident;
     let expanded = quote! {
-        #[derive(Default, LameEcsComponents)]
-        pub struct #struct_name{
+        #[derive(Default, lame_ecs::LameEcsComponents)]
+        pub struct LameEcsComponentCollection {
             #(pub #field_names: Vec<Option<#types>>,)*
         }
     };
@@ -58,7 +57,7 @@ pub fn derive_lame_ecs_components_fn(input: TokenStream) -> TokenStream {
     };
     let ident = &input.ident;
     let expanded = quote! {
-        impl ComponentCollection for #ident {
+        impl lame_ecs::ComponentCollection for #ident {
             fn push_none(&mut self) {
                 #(self.#field_names.push(None);)*
             }
@@ -75,9 +74,9 @@ pub fn derive_lame_ecs_components_fn(input: TokenStream) -> TokenStream {
             }
         }
 
-        #(impl Component for #types {
-            fn get_vec(components: &mut dyn ComponentCollection) -> &mut Vec<Option<Self>> {
-                &mut downcast_components_mut::<#ident>(components).#field_names
+        #(impl lame_ecs::Component for #types {
+            fn get_vec(components: &mut dyn lame_ecs::ComponentCollection) -> &mut Vec<Option<Self>> {
+                &mut lame_ecs::downcast_components_mut::<LameEcsComponentCollection>(components).#field_names
             }
         })*
 
@@ -86,78 +85,98 @@ pub fn derive_lame_ecs_components_fn(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
-pub fn get_component_collection(input: TokenStream) -> TokenStream {
-    let parser =
-        syn::punctuated::Punctuated::<syn::Ident, syn::Token![,]>::parse_separated_nonempty;
-    let ids = match parser.parse(input) {
-        Ok(t) => t,
+pub fn component_iter_mut(input: TokenStream) -> TokenStream {
+    let data = match get_component_iter_input(input) {
+        Ok(d) => d,
         Err(e) => {
-            return TokenStream::from(e.to_compile_error());
+            return e;
         }
     };
-    if ids.len() != 2 {
-        return TokenStream::from(
-            Error::new(
-                ids.span(),
-                "expected get_component_collection(world_instance, CollectionType",
-            )
-            .to_compile_error(),
-        );
-    }
-    let mut iter = ids.iter();
-    let world_instance = iter.next().unwrap();
-    let collection_type = iter.next().unwrap();
+    let world = &data.world;
+    let fields = &data.fields;
+    let captures = &data.captures;
     let expanded = quote! {
-        downcast_components_mut::<#collection_type>(#world_instance.components.as_mut())
+        {
+            use lame_ecs::itertools;
+            let components = lame_ecs::downcast_components_mut::<LameEcsComponentCollection>(#world.components.as_mut());
+            itertools::izip!(
+                #(&mut components.#fields,)*
+                &#world.entities
+            )
+            .filter_map(|(#(#captures,)* e)| Some((#(#captures.as_mut()?,)* e)))
+        }
     };
     TokenStream::from(expanded)
 }
 
 #[proc_macro]
 pub fn component_iter(input: TokenStream) -> TokenStream {
-    let parser =
-        syn::punctuated::Punctuated::<syn::Ident, syn::Token![,]>::parse_separated_nonempty;
-    let ids = match parser.parse(input) {
-        Ok(t) => t,
+    let data = match get_component_iter_input(input) {
+        Ok(d) => d,
         Err(e) => {
-            return TokenStream::from(e.to_compile_error());
+            return e;
         }
     };
-    if ids.len() <= 2 {
-        return TokenStream::from(
-            Error::new(
-                ids.span(),
-                "expected component_iter(world_instance, CollectionType, C0, C1 ...)",
-            )
-            .to_compile_error(),
-        );
-    }
-    let mut ids_iter = ids.iter();
-    let world = ids_iter.next().unwrap();
-    let collection = ids_iter.next().unwrap();
-    let fields: Vec<Ident> = ids_iter.map(get_field_from_type).collect();
-    let captures: Vec<Ident> = fields
-        .iter()
-        .enumerate()
-        .map(|x| Ident::new(&("f".to_owned() + &x.0.to_string()), x.1.span()))
-        .collect();
+    let world = &data.world;
+    let fields = &data.fields;
+    let captures = &data.captures;
     let expanded = quote! {
-        itertools::izip!(
-            #(&mut #collection.#fields,)*
-            &#world.entities
-        )
-        .filter_map(|(#(#captures,)* e)| Some((#(#captures.as_mut()?,)* e)))
+        {
+            use lame_ecs::itertools;
+            let components = lame_ecs::downcast_components::<LameEcsComponentCollection>(#world.components.as_ref());
+            itertools::izip!(
+                #(&components.#fields,)*
+                &#world.entities
+            )
+            .filter_map(|(#(#captures,)* e)| Some((#(#captures.as_ref()?,)* e)))
+        }
     };
     TokenStream::from(expanded)
 }
 
 #[proc_macro]
 pub fn create_world(input: TokenStream) -> TokenStream {
-    let collection_ty = parse_macro_input!(input as Ident);
+    parse_macro_input!(input as syn::parse::Nothing);
     let expanded = quote! {
-        World::new(Box::new(#collection_ty::default()))
+        lame_ecs::World::new(Box::new(LameEcsComponentCollection::default()))
     };
     TokenStream::from(expanded)
+}
+
+struct ComponentIterInput {
+    world: Ident,
+    fields: Vec<Ident>,
+    captures: Vec<Ident>,
+}
+
+fn get_component_iter_input(input: TokenStream) -> Result<ComponentIterInput, TokenStream> {
+    let parser =
+        syn::punctuated::Punctuated::<syn::Ident, syn::Token![,]>::parse_separated_nonempty;
+    let ids = parser
+        .parse(input)
+        .map_err(|e| TokenStream::from(e.to_compile_error()))?;
+    if ids.len() <= 1 {
+        return Err(TokenStream::from(
+            Error::new(
+                ids.span(),
+                "expected component_iter(world_instance, C0, C1 ...)",
+            )
+            .to_compile_error(),
+        ));
+    }
+    let mut ids_iter = ids.iter();
+    let world = ids_iter.next().unwrap().clone();
+    let fields: Vec<Ident> = ids_iter.map(get_field_from_type).collect();
+    let captures: Vec<Ident> = fields
+        .iter()
+        .enumerate()
+        .map(|x| Ident::new(&("f".to_owned() + &x.0.to_string()), x.1.span()))
+        .collect();
+    Ok(ComponentIterInput {
+        world,
+        fields,
+        captures,
+    })
 }
 
 fn get_field_from_type(ty: &Ident) -> Ident {
