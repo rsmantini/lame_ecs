@@ -7,7 +7,8 @@ Minimal ecs library that I did to learn a bit of rust
 
 **usage**
 
-First generate the `LameEcsComponentCollection` struct by calling the macro `create_component_collection_struct` passing the types of the components to be used. 
+First generate the `LameEcsComponentCollection` struct by calling the macro `create_component_collection_struct`, 
+passing the types of the components to be used as parameters. 
 The generated struct needs to be imported to every file this library is used.
 
 ```rs
@@ -56,7 +57,9 @@ They receive as parameters the world instance and a list of component types to b
 let mut iter = component_iter!(world, Foo, Bar);
 ```
 
-The iterator will yield a tuple with the requested components and the entity that owns then. It only yield entities that contains *ALL* of the request components. In the example above the yielded tupe will be: `(&Foo, &Bar, &lame_ecs::Entity)` 
+The iterator will yield a tuple with the requested components and the entity that owns then.
+It only yield entities that contains *ALL* of the requested components.
+In the example above the yielded tupe will be: `(&Foo, &Bar, &lame_ecs::Entity)` 
 
 
 Usage example:
